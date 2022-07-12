@@ -1,0 +1,16 @@
+namespace: tools-practicetest
+
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    tekton.dev/docker-0: registry.redhat.io
+    tekton.dev/docker-1: quay.io
+
+secretGenerator:
+- name: docker-registries
+  files:
+  - secrets/.dockerconfigjson
+  type: kubernetes.io/dockerconfigjson
+
+resources:
+- ../../../components/tekton/base

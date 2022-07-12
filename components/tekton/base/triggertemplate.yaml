@@ -1,0 +1,51 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: trigger-template-simple-httpd
+  namespace: dev-practicetest
+spec:
+  params:
+  - name: git-revision
+  - name: git-commit-message
+  - name: git-repo-url
+  - name: git-repo-name
+  - name: content-type
+  - name: pusher-name
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      annotations:
+        pipeline.openshift.io/started-by: admin
+      generateName: practice-test-
+      labels:
+        app.kubernetes.io/instance: practice-test
+        app.kubernetes.io/name: practice-test
+        pipeline.openshift.io/strategy: docker
+        pipeline.openshift.io/type: kubernetes
+        tekton.dev/pipeline: practice-test
+    spec:
+      params:
+      - name: GIT_REPO
+        value: https://github.com/gnunn1/simple-httpd
+      - name: GIT_REVISION
+        value: main
+      - name: IMAGE_NAME
+        value: quay.io/gnunn/simple-httpd
+      - name: PATH_CONTEXT
+        value: .
+      pipelineRef:
+        name: simple-httpd
+      status: null
+      workspaces:
+      - name: workspace
+        volumeClaimTemplate:
+          metadata:
+            labels:
+              tekton.dev/pipeline: simple-httpd
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi

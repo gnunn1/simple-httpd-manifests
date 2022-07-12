@@ -1,0 +1,4 @@
+namespace: dev-practicetest
+
+resources:
+- ../../../components/app/base

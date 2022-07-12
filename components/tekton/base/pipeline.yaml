@@ -1,0 +1,92 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  labels:
+    app.kubernetes.io/instance: practice-test
+    app.kubernetes.io/name: practice-test
+    pipeline.openshift.io/strategy: docker
+    pipeline.openshift.io/type: kubernetes
+  name: practice-test
+spec:
+  params:
+  - default: practice-test
+    name: APP_NAME
+    type: string
+  - default: practice-test
+    name: CONTAINER_NAME
+    type: string
+  - default: https://github.com/gnunn1/simple-httpd
+    name: GIT_REPO
+    type: string
+  - default: main
+    name: GIT_REVISION
+    type: string
+  - default: quay.io/gnunn/simple-httpd
+    name: IMAGE_NAME
+    type: string
+  - default: .
+    name: PATH_CONTEXT
+    type: string
+  tasks:
+  - name: fetch-repository
+    params:
+    - name: url
+      value: $(params.GIT_REPO)
+    - name: revision
+      value: $(params.GIT_REVISION)
+    - name: subdirectory
+      value: ""
+    - name: deleteExisting
+      value: "true"
+    taskRef:
+      kind: ClusterTask
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: workspace
+  - name: build
+    params:
+    - name: IMAGE
+      value: $(params.IMAGE_NAME)
+    - name: TLSVERIFY
+      value: "false"
+    - name: CONTEXT
+      value: $(params.PATH_CONTEXT)
+    runAfter:
+    - fetch-repository
+    taskRef:
+      kind: ClusterTask
+      name: buildah
+    workspaces:
+    - name: source
+      workspace: workspace
+  - name: deploy-dev
+    params:
+    - name: SCRIPT
+      value: |-
+        echo "updating image..."
+        oc set image deploy/$(params.APP_NAME) $(params.CONTAINER_NAME)=$(params.IMAGE_NAME)@$(tasks.build.results.IMAGE_DIGEST) -n dev-practicetest
+
+        echo "Waiting for deployment to complete..."
+        oc rollout status deploy/$(params.APP_NAME) -n dev-practicetest
+    runAfter:
+    - build
+    taskRef:
+      kind: ClusterTask
+      name: openshift-client
+  - name: deploy-test
+    params:
+    - name: SCRIPT
+      value: |-
+        echo "updating image..."
+        oc set image deploy/$(params.APP_NAME) $(params.CONTAINER_NAME)=$(params.IMAGE_NAME)@$(tasks.build.results.IMAGE_DIGEST) -n test-practicetest
+
+        echo "Waiting for deployment to complete..."
+        oc rollout status deploy/$(params.APP_NAME) -n test-practicetest
+    runAfter:
+    - deploy-dev
+    taskRef:
+      kind: ClusterTask
+      name: openshift-client
+  workspaces:
+  - name: workspace

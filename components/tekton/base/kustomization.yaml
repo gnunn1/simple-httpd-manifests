@@ -1,0 +1,5 @@
+resources:
+- workspace-pvc.yaml
+- pipeline.yaml
+- triggertemplate.yaml
+- eventlistener.yaml

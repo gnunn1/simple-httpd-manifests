@@ -1,0 +1,4 @@
+namespace: prd-practicetest
+
+resources:
+- ../../../components/app/base
