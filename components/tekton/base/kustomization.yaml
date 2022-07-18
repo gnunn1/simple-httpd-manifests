@@ -1,4 +1,6 @@
 resources:
+- rox-image-check-task.yaml
+- rox-image-scan-task.yaml
 - workspace-pvc.yaml
 - pipeline.yaml
 - triggertemplate.yaml
