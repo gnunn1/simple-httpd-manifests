@@ -27,9 +27,9 @@ spec:
     spec:
       params:
       - name: GIT_REPO
-        value: https://github.com/gnunn1/simple-httpd
+        value: $(params.git-repo-url)
       - name: GIT_REVISION
-        value: main
+        value: $(params.git-revision)
       - name: IMAGE_NAME
         value: quay.io/gnunn/simple-httpd
       - name: PATH_CONTEXT
