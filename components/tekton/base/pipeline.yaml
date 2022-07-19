@@ -60,6 +60,40 @@ spec:
     workspaces:
     - name: source
       workspace: workspace
+  - name: acs-scan-image
+    taskRef:
+      name: rox-image-scan
+      kind: Task
+    runAfter:
+      - build
+    params:
+      - name: output_format
+        value: table
+      - name: image
+        value: $(params.IMAGE_NAME)@$(tasks.build.results.IMAGE_DIGEST)
+    when:
+      - input: "$(workspaces.acs-central.bound)"
+        operator: in
+        values: ["true"]
+    workspaces:
+      - name: acs-central
+        workspace: acs-central
+  - name: acs-check-image
+    taskRef:
+      name: rox-image-check
+      kind: Task
+    runAfter:
+      - acs-scan-image
+    params:
+      - name: image
+        value: $(params.IMAGE_NAME)@$(tasks.build.results.IMAGE_DIGEST)
+    when:
+      - input: "$(workspaces.acs-central.bound)"
+        operator: in
+        values: ["true"]
+    workspaces:
+      - name: acs-central
+        workspace: acs-central
   - name: deploy-dev
     params:
     - name: SCRIPT
@@ -70,7 +104,7 @@ spec:
         echo "Waiting for deployment to complete..."
         oc rollout status deploy/$(params.APP_NAME) -n dev-practicetest
     runAfter:
-    - build
+    - acs-check-image
     taskRef:
       kind: ClusterTask
       name: openshift-client
@@ -90,3 +124,5 @@ spec:
       name: openshift-client
   workspaces:
   - name: workspace
+  - name: acs-central
+    optional: true
